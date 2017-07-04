@@ -1,4 +1,3 @@
-
 module VerificaTipos where 
 
 
@@ -11,7 +10,6 @@ module VerificaTipos where
 type Id = String
 
 type Gamma= [(Id, Tipo)]
-
 
 data Tipo = TInt | TBool | TFuncao Tipo Tipo 
  deriving(Show, Eq)

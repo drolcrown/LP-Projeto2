@@ -10,7 +10,7 @@ v2 = ValorI 2
 vt = ValorB True
 vf = ValorB False
 
-amb = [("x", TInt), ("z", TBool)]
+amb = [("x", TInt), ("z", TBool), ("y", TInt)]
 
 verSoma = (Soma (v2)(v5)) 
 
