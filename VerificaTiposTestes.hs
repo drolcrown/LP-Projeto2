@@ -5,8 +5,10 @@ import VerificaTipos
 import Test.HUnit
 
 v5 = ValorI 5
+v4 = ValorI 4
 v3 = ValorI 3
 v2 = ValorI 2
+v1 = ValorI 1
 v0 = ValorI 0
 
 vt = ValorB True
@@ -73,6 +75,20 @@ teste12 = TestCase (assertEqual "verificarTipos 5 * 2" (Just TInt) (verificarTip
 
 teste13 = TestCase (assertEqual "verificarTipos 3 / 0" (Nothing) (verificarTipos verDiv2 []))
 
+teste14 = TestCase (assertEqual "verificarTipos if true then true else false" (Just TBool) (verificarTipos (If (vt) (vt) (vf)) []))
+
+teste15 = TestCase (assertEqual "verificarTipos if false then true else false" (Just TBool) (verificarTipos (If (vf) (vt) (vf)) []))
+
+teste16 = TestCase (assertEqual "verificarTipos if true then 5 else 10" (Just TInt) (verificarTipos (If (vt) (ValorI 5) (ValorI 10)) []))
+
+teste17 = TestCase (assertEqual "verificarTipos if 2 then true else false" (Nothing) (verificarTipos (If (ValorI 2) (vt) (vf)) []))
+
+teste18 = TestCase (assertEqual "verificarTipos if 2 then 3 else 4" (Nothing) (verificarTipos (If (ValorI 2) (v3) (v4)) []))
+
+teste19 = TestCase (assertEqual "verificarTipos if true then 2 else false" (Nothing) (verificarTipos (If (vt) (v2) (vf)) []))
+
+teste20 = TestCase (assertEqual "verificarTipos if true then true else 5" (Nothing) (verificarTipos (If (vt) (vt) (v5)) []))
+
 todosOsTestes = TestList [ teste
                          , teste1
                          , teste2
@@ -87,6 +103,13 @@ todosOsTestes = TestList [ teste
                          , teste11
                          , teste12
                          , teste13
+                         , teste14
+                         , teste15
+                         , teste16
+                         , teste17
+                         , teste18
+                         , teste19
+                         , teste20
                          ]
 
 executarTestes = runTestTT todosOsTestes
