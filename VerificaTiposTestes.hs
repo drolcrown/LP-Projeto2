@@ -5,28 +5,32 @@ import VerificaTipos
 import Test.HUnit
 
 v5 = ValorI 5
+v3 = ValorI 3
 v2 = ValorI 2
+v0 = ValorI 0
 
 vt = ValorB True
 vf = ValorB False
 
 amb = [("x", TInt), ("z", TBool), ("y", TInt)]
 
-verSoma = (Soma (v2)(v5)) 
+verSoma = (Soma (v2) (v5)) 
 
-verSub = (Subtracao (v2)(v5)) 
+verSub = (Subtracao (v2) (v5)) 
 
-verMult = (Multiplicacao (v2)(v5)) 
+verMult = (Multiplicacao (v2) (v5)) 
 
-verDiv = (Divisao (v2)(v5)) 
+verDiv = (Divisao (v2) (v5)) 
 
-verSoma1 = (Soma (v2)(Ref "x")) 
+verSoma1 = (Soma (v2) (Ref "x")) 
 
-verSub1 = (Subtracao (v2)(Ref "x")) 
+verSub1 = (Subtracao (v2) (Ref "x")) 
 
-verMult1 = (Multiplicacao (v2)(Ref "x")) 
+verMult1 = (Multiplicacao (v2) (Ref "x")) 
 
-verDiv1 = (Divisao (v2)(Ref "x")) 
+verDiv1 = (Divisao (v2) (Ref "x"))
+
+verDiv2 = (Divisao (v3) (v0))
 
 
 let1 = Let "x" (ValorI 4) (Soma (Ref "x")(Ref "x"))
@@ -67,6 +71,8 @@ teste11 = TestCase (assertEqual "verificarTipos 5 / 2" (Just TInt) (verificarTip
 
 teste12 = TestCase (assertEqual "verificarTipos 5 * 2" (Just TInt) (verificarTipos verMult []))
 
+teste13 = TestCase (assertEqual "verificarTipos 3 / 0" (Nothing) (verificarTipos verDiv2 []))
+
 todosOsTestes = TestList [ teste
                          , teste1
                          , teste2
@@ -80,6 +86,7 @@ todosOsTestes = TestList [ teste
                          , teste10
                          , teste11
                          , teste12
+                         , teste13
                          ]
 
 executarTestes = runTestTT todosOsTestes
