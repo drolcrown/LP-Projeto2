@@ -39,7 +39,13 @@ verificarTipos (Subtracao l r)          gamma = expAlgebricas l r gamma
 verificarTipos (Multiplicacao l r)      gamma = expAlgebricas l r gamma
 verificarTipos (Divisao l r)            gamma = expAlgebricas l r gamma
 verificarTipos (Ref v)                  gamma = pesquisar v gamma
-verificarTipos (Let v e c)              gamma = undefined
+
+verificarTipos (Let v e c)              gamma = verificarTipos e gamma >>= \lt -> verificarTipos c gamma2 >>= \rt -> if lt == rt then return rt else Nothing
+     where
+          gamma2 = incrementaAmb v (verificarTipos e gamma) gamma
+
+verificarTipos (Aplicacao e1 e2)        gamma = undefined
+verificarTipos (If e1 e2 e3)            gamma = undefined
 
 -- Verifica se os tipos equivalem a TInt.
 expAlgebricas :: Expressao -> Expressao -> Gamma -> Maybe Tipo
@@ -52,3 +58,12 @@ pesquisar v [] = error "Variavel nao declarada."
 pesquisar v ((i,e):xs)
  | v == i = return e
  | otherwise = pesquisar v xs
+
+-- Incrementa o ambiente.
+incrementaAmb :: Id -> Maybe Tipo -> Gamma -> Gamma
+incrementaAmb n Nothing  [] = []
+incrementaAmb n Nothing  ((i,e):xs) = ((i,e):xs)
+incrementaAmb n (Just v) [] = [(n, v)]
+incrementaAmb n (Just v) ((i,e):xs)
+ | n == i = incrementaAmb n (return v) []
+ | otherwise = incrementaAmb n (return v) xs
