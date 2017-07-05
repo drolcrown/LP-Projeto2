@@ -45,15 +45,31 @@ let4 = Let "x" (ValorB True) (Soma (ValorI 2) (ValorI 3))
 
 let5 = Let "x" (ValorB True) (Soma (Ref "x") (ValorI 3))
 
+ap1 = Aplicacao (Lambda ("x", TInt) (TBool) (ValorB True)) (v5)
 
+ap2 = Aplicacao (Lambda ("x", TInt) (TInt) (ValorB True)) (ValorB True)
 
-teste = TestCase (assertEqual "verificarTipos 5" (Just TInt) (verificarTipos v5 []))
+ap3 = Aplicacao (Lambda ("x", TInt) (TBool) (ValorB True)) (ValorB True)
 
-teste1 = TestCase (assertEqual "verificarTipos True" (Just TBool) (verificarTipos vt []))
+ap4 = Aplicacao (Lambda ("x", TBool) (TInt) (ValorB True)) (ValorB True)
 
-teste2 = TestCase (assertEqual "verificarTipos let x = 5 in x + 2" (Just TInt) (verificarTipos let2 []))
+ap5 = Aplicacao (Lambda ("x", TInt) (TInt) (v5)) (v5)
 
-teste3 = TestCase (assertEqual "verificarTipos let x = 5 in x + x" (Just TInt) (verificarTipos let1 amb))
+ap6 = Aplicacao (Lambda ("x", TBool) (TBool) (Soma (Ref "x")(v5))) (ValorB True)
+
+ap7 = (Aplicacao (Lambda ("x", TBool ) (TInt) (Soma (ValorI 2)(ValorI 4))) (ValorB True)) 
+-- Just Int
+ap8 = (Aplicacao (Lambda ("x", TInt ) (TInt) (Soma (ValorI 2)(ValorI 4))) (ValorB True)) 
+-- Nothing
+ap9 = (Aplicacao (Lambda ("x", TBool) (TBool) (Soma (Ref "x")(ValorI 4))) (ValorB True))
+
+ap10 = (Aplicacao (Lambda ("x", TInt) (TBool) (Soma (Ref "x")(ValorI 4))) (v2))
+
+teste1 = TestCase (assertEqual "verificarTipos 5" (Just TInt) (verificarTipos v5 []))
+
+teste2 = TestCase (assertEqual "verificarTipos True" (Just TBool) (verificarTipos vt []))
+
+teste3 = TestCase (assertEqual "verificarTipos let x = 5 in x + 2" (Just TInt) (verificarTipos let2 []))
 
 teste4 = TestCase (assertEqual "verificarTipos let x = True in x" (Just TBool) (verificarTipos let3 []))
 
@@ -89,8 +105,27 @@ teste19 = TestCase (assertEqual "verificarTipos if true then 2 else false" (Noth
 
 teste20 = TestCase (assertEqual "verificarTipos if true then true else 5" (Nothing) (verificarTipos (If (vt) (vt) (v5)) []))
 
-todosOsTestes = TestList [ teste
-                         , teste1
+teste21 = TestCase (assertEqual "verificarTipos Aplicacao Funcao Tint Tint 5" (Just TBool) (verificarTipos (ap1) []))
+
+teste22 = TestCase (assertEqual "verificarTipos Aplicacao Funcao Tint Tint True" (Nothing) (verificarTipos (ap2) []))
+
+teste23 = TestCase (assertEqual "verificarTipos Aplicacao Funcao Tint TBool True" (Nothing) (verificarTipos (ap3) []))
+
+teste24 = TestCase (assertEqual "verificarTipos Aplicacao Funcao TBool TInt True" (Just TBool) (verificarTipos (ap4) []))
+
+teste25 = TestCase (assertEqual "verificarTipos Aplicacao Funcao TInt TInt 5" (Just TInt) (verificarTipos (ap5) []))
+
+teste26 = TestCase (assertEqual "Soma = True + 5" (Nothing) (verificarTipos (ap6) []))
+
+teste27 = TestCase (assertEqual "Soma 2 + 4 -- Argumento TBool e tipo TInt = TInt" (Just TInt) (verificarTipos (ap7) []))
+
+teste28 = TestCase (assertEqual "Soma 2 + 4 -- Argumento TBool e tipo TInt" (Nothing) (verificarTipos (ap8) []))
+
+teste29 = TestCase (assertEqual "Soma x + 4 --- x = TBool" (Nothing) (verificarTipos (ap9) []))
+
+teste30 = TestCase (assertEqual "Soma x + 4 --- x = TInt" (Just TInt) (verificarTipos (ap10) []))
+
+todosOsTestes = TestList [ teste1
                          , teste2
                          , teste3
                          , teste4
@@ -110,7 +145,16 @@ todosOsTestes = TestList [ teste
                          , teste18
                          , teste19
                          , teste20
+                         , teste21
+                         , teste22
+                         , teste23
+                         , teste24
+                         , teste25
+                         , teste26
+                         , teste27
+                         , teste28
+                         , teste29
+                         , teste30
                          ]
 
 executarTestes = runTestTT todosOsTestes
-
