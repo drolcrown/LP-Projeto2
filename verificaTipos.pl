@@ -61,8 +61,13 @@ verificarTipos(Gamma, aplicacao(Exp1,Exp2), Res):-
 
 verificarTipos(_, aplicacao(_,_), tErro).
 
+verificarTipos(Gamma, if(Exp,Then,Else), T1):-
+  verificarTipos(Gamma, Exp, tBool),!,
+  verificarTipos(Gamma, Then, T1),
+  verificarTipos(Gamma, Else, T1),!.
+
+verificarTipos(_, if(_,_,_), tErro).
+
 pesquisarAmbiente(_, [], variavel_nao_encontrada).
 pesquisarAmbiente(Var, [(Var,Exp)|_], Exp) :- !.
 pesquisarAmbiente(Var, [_|Tail], Res) :- pesquisarAmbiente(Var, Tail, Res).
-
-

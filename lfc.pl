@@ -38,7 +38,7 @@ avaliar(Gamma, multiplicacao(LHS, RHS), Res) :-
 
 avaliar(_, multiplicacao(_, _), erro_tipo).
 
-%funções let%
+%funï¿½ï¿½es let%
 avaliar(Gamma, let(X, Exp1, Exp2), Res) :-
     avaliar(Gamma, Exp1, R),
     avaliar([(X,R)|Gamma], Exp2, Res).
@@ -51,7 +51,7 @@ avaliar(Gamma, var(Var), Res) :-
     pesquisarAmbiente(Var, Gamma, Exp),
     avaliar(Gamma, Exp, Res).
 
-%expressão lambda%
+%expressï¿½o lambda%
 avaliar(_, lambda(Arg, Exp), lambda(Arg, Exp)).
 
 %aplicacao%
@@ -60,7 +60,7 @@ avaliar(Gamma, aplicacao(Exp1, Exp2), Res) :-
     avaliar(Gamma, Exp2, Valor),
     avaliar([(Arg,Valor)|Gamma] , Exp, Res).
 
-%caso Exp1 não seja uma expressao lambda eh feita uma busca em Gamma%
+%caso Exp1 nï¿½o seja uma expressao lambda eh feita uma busca em Gamma%
 avaliar(Gamma, aplicacao(Exp1,Exp2),Res) :-
     pesquisarAmbiente(Exp1,Gamma,R),
     avaliar(Gamma, R, lambda(Arg, Exp)),!,
@@ -69,15 +69,12 @@ avaliar(Gamma, aplicacao(Exp1,Exp2),Res) :-
 
 avaliar(_, aplicacao(_, _), aplicacao_requer_exp_lambda).
 
+avaliar(Gamma, if(Exp,Then,_), Then):-
+  avaliar(Gamma, Exp, valor_booleano(true)),!.
+
+avaliar(Gamma, if(Exp,_, Else), Else):-
+  avaliar(Gamma, Exp, valor_booleano(false)).
+
 pesquisarAmbiente(_, [], variavel_nao_encontrada).
 pesquisarAmbiente(Var, [(Var,Exp)|_], Exp) :- !.
 pesquisarAmbiente(Var, [_|Tail], Res) :- pesquisarAmbiente(Var, Tail, Res).
-
-
-
-
-
-
-
-
-
