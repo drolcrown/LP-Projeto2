@@ -1,0 +1,15 @@
+[1] Config.pm:340> INFO - This is Biber 2.4
+[2] Config.pm:343> INFO - Logfile is 'LFCFDTypes.blg'
+[140] biber:287> INFO - === Qua Jul  5, 2017, 19:38:37
+[290] Biber.pm:348> INFO - Reading 'LFCFDTypes.bcf'
+[548] Biber.pm:742> INFO - Found 1 citekeys in bib section 0
+[572] Biber.pm:3151> INFO - Processing section 0
+[628] Biber.pm:3308> INFO - Looking for bibtex format file 'references.bib' for section 0
+[647] bibtex.pm:1113> INFO - Decoding LaTeX character macros into UTF-8
+[650] bibtex.pm:974> INFO - Found BibTeX data source 'references.bib'
+[712] UCollate.pm:65> INFO - Overriding locale 'pt-BR' defaults 'variable = shifted' with 'variable = non-ignorable'
+[712] UCollate.pm:65> INFO - Overriding locale 'pt-BR' defaults 'normalization = NFD' with 'normalization = prenormalized'
+[712] Biber.pm:3028> INFO - Sorting list 'nty/global' of type 'entry' with scheme 'nty' and locale 'pt-BR'
+[712] Biber.pm:3032> INFO - No sort tailoring available for locale 'pt-BR'
+[715] bbl.pm:519> INFO - Writing 'LFCFDTypes.bbl' with encoding 'UTF-8'
+[722] bbl.pm:615> INFO - Output to LFCFDTypes.bbl

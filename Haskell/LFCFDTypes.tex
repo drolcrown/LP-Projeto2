@@ -1,0 +1,660 @@
+\documentclass[12pt]{article}
+
+%% ODER: format ==         = "\mathrel{==}"
+%% ODER: format /=         = "\neq "
+%
+%
+\makeatletter
+\@ifundefined{lhs2tex.lhs2tex.sty.read}%
+  {\@namedef{lhs2tex.lhs2tex.sty.read}{}%
+   \newcommand\SkipToFmtEnd{}%
+   \newcommand\EndFmtInput{}%
+   \long\def\SkipToFmtEnd#1\EndFmtInput{}%
+  }\SkipToFmtEnd
+
+\newcommand\ReadOnlyOnce[1]{\@ifundefined{#1}{\@namedef{#1}{}}\SkipToFmtEnd}
+\usepackage{amstext}
+\usepackage{amssymb}
+\usepackage{stmaryrd}
+\DeclareFontFamily{OT1}{cmtex}{}
+\DeclareFontShape{OT1}{cmtex}{m}{n}
+  {<5><6><7><8>cmtex8
+   <9>cmtex9
+   <10><10.95><12><14.4><17.28><20.74><24.88>cmtex10}{}
+\DeclareFontShape{OT1}{cmtex}{m}{it}
+  {<-> ssub * cmtt/m/it}{}
+\newcommand{\texfamily}{\fontfamily{cmtex}\selectfont}
+\DeclareFontShape{OT1}{cmtt}{bx}{n}
+  {<5><6><7><8>cmtt8
+   <9>cmbtt9
+   <10><10.95><12><14.4><17.28><20.74><24.88>cmbtt10}{}
+\DeclareFontShape{OT1}{cmtex}{bx}{n}
+  {<-> ssub * cmtt/bx/n}{}
+\newcommand{\tex}[1]{\text{\texfamily#1}}	% NEU
+
+\newcommand{\Sp}{\hskip.33334em\relax}
+
+
+\newcommand{\Conid}[1]{\mathit{#1}}
+\newcommand{\Varid}[1]{\mathit{#1}}
+\newcommand{\anonymous}{\kern0.06em \vbox{\hrule\@width.5em}}
+\newcommand{\plus}{\mathbin{+\!\!\!+}}
+\newcommand{\bind}{\mathbin{>\!\!\!>\mkern-6.7mu=}}
+\newcommand{\rbind}{\mathbin{=\mkern-6.7mu<\!\!\!<}}% suggested by Neil Mitchell
+\newcommand{\sequ}{\mathbin{>\!\!\!>}}
+\renewcommand{\leq}{\leqslant}
+\renewcommand{\geq}{\geqslant}
+\usepackage{polytable}
+
+%mathindent has to be defined
+\@ifundefined{mathindent}%
+  {\newdimen\mathindent\mathindent\leftmargini}%
+  {}%
+
+\def\resethooks{%
+  \global\let\SaveRestoreHook\empty
+  \global\let\ColumnHook\empty}
+\newcommand*{\savecolumns}[1][default]%
+  {\g@addto@macro\SaveRestoreHook{\savecolumns[#1]}}
+\newcommand*{\restorecolumns}[1][default]%
+  {\g@addto@macro\SaveRestoreHook{\restorecolumns[#1]}}
+\newcommand*{\aligncolumn}[2]%
+  {\g@addto@macro\ColumnHook{\column{#1}{#2}}}
+
+\resethooks
+
+\newcommand{\onelinecommentchars}{\quad-{}- }
+\newcommand{\commentbeginchars}{\enskip\{-}
+\newcommand{\commentendchars}{-\}\enskip}
+
+\newcommand{\visiblecomments}{%
+  \let\onelinecomment=\onelinecommentchars
+  \let\commentbegin=\commentbeginchars
+  \let\commentend=\commentendchars}
+
+\newcommand{\invisiblecomments}{%
+  \let\onelinecomment=\empty
+  \let\commentbegin=\empty
+  \let\commentend=\empty}
+
+\visiblecomments
+
+\newlength{\blanklineskip}
+\setlength{\blanklineskip}{0.66084ex}
+
+\newcommand{\hsindent}[1]{\quad}% default is fixed indentation
+\let\hspre\empty
+\let\hspost\empty
+\newcommand{\NB}{\textbf{NB}}
+\newcommand{\Todo}[1]{$\langle$\textbf{To do:}~#1$\rangle$}
+
+\EndFmtInput
+\makeatother
+%
+
+\usepackage[utf8]{inputenc}
+\usepackage[brazil]{babel}
+\usepackage{color}
+\usepackage{fontenc}
+\usepackage{biblatex}
+\usepackage{csquotes}
+\usepackage{verbatim}
+\usepackage{listings}
+\usepackage{busproofs}
+\usepackage{amsfonts}
+\usepackage[nottoc]{tocbibind}
+
+\addbibresource{references.bib}
+
+\title{Implementa\c c\~{a}o de Verifica\c c\~{a}o de Tipos em Haskell}
+
+\author{Luisa Sinzker Fantin, 14/0151893\\
+        Jo\~{a}o Pedro Silva Sousa, 15/0038381\\
+        Rafael Oliveira de Souza, 15/0081537\\
+}
+
+\begin{document}
+
+\maketitle
+
+\section{Introdu\c c\~{a}o}
+
+Esse documento apresenta uma implementa\c c\~{a}o,
+em \emph{literate Haskell}, do mecanismo de verifica\c c\~{a}o
+de tipos de uma linguagem de programa\c c\~{a}o funcional
+minimalista.
+
+O objetivo da implementa\c c\~{a}o de tipos consiste em identificar
+erros a n\'{i}vel sint\'{a}tico (n\~{a}o erros de sintaxe) na linguagem,
+utilizando o interpretador. Algumas computa\c c\~{o}es inv\'{a}lidas podem
+ser identificadas antes mesmo de execut\'{a}-las, como por exemplo uma
+divis\~{a}o por zero.
+
+Caso tent\'{a}ssemos avaliar uma divis\~{a}o por zero no interpretador,
+seria obtida a sa\'{i}a \emph{infinity}, resultado de uma computa\c c\~{a}o
+realizada pelo interpretador da linguagem Haskell, n\~{a}o do interpretador
+constru\'{i}do. Ou seja, se esper\'{a}ssemos um erro e o GHCi n\~{a}o o
+identificasse, ou o GHCi marcasse um erro que n\~{a}o estamos esperando,
+o interpretador n\~{a}o seria confi\'{a}vel \cite{Shriram}.
+
+
+\section{Vis\~{a}o geral da linguagem}
+
+A linguagem LFCF suporta tanto express\~{o}es
+identificadas (LET) quanto identificadores e fun\c c\~{o}es de alta ordem
+(com o mecanismo de expressoes lambda). O foco \'{e} na
+verifica\c c\~{a}o de tipos, ent\~{a}o n\~{a}o est\~{a}o
+implementadas fun\c c\~{o}es voltadas para a avalia\c c\~{a}o
+das express\~{o}es. 
+
+
+\section{Defini\c c\~{a}o da \'{A}rvore Sint\'{a}tica Abstrata}
+
+A implementa\c c\~{a}o consiste na defini\c c\~{a}o de
+um m\'{o}dulo Haskell mais alguns tipos auxiliares, como
+\texttt{Id} (um tipo sin\^{o}nimo para uma \texttt{string}) e
+\texttt{Gamma}, que corresponde a um mapeamento de
+identificadores em tipos. 
+
+\begingroup\par\noindent\advance\leftskip\mathindent\(
+\begin{pboxed}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{module}\;\Conid{LFCFDTypes}\;\mathbf{where}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\mathbf{type}\;\Conid{Id}\mathrel{=}\Conid{String}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\mathbf{type}\;\Conid{Gamma}\mathrel{=}[\mskip1.5mu (\Conid{Id},\Conid{Tipo})\mskip1.5mu]{}\<[E]%
+\ColumnHook
+\end{pboxed}
+\)\par\noindent\endgroup\resethooks
+
+Os tipos v\'{a}lidos s\~{a}o definidos com o
+tipo alg\'{e}brico \texttt{Tipo}, que pode
+ser um tipo inteiro, um tipo booleano
+e um tipo fun\c c\~{a}o. O tipo fun\c c\~{a}o
+deve expressar tanto o tipo do argumento quanto
+o tipo do retorno. As express\~{o}es, conforme
+mencionado anteriormente, envolvem tanto
+valores inteiros quanto booleanos, bem
+como express\~{o}es bin\'{a}rias (soma,
+subtra\c c\~{a}o, etc.), express\~{o}es
+\texttt{let}, \texttt{lambda}, aplica\c c\~{a}o
+de fun\c c\~{o}es e \texttt{if-then-else} 
+
+\begingroup\par\noindent\advance\leftskip\mathindent\(
+\begin{pboxed}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{5}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{11}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{16}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{data}\;\Conid{Tipo}\mathrel{=}\Conid{TInt}{}\<[E]%
+\\
+\>[B]{}\hsindent{11}{}\<[11]%
+\>[11]{}\mid \Conid{TBool}{}\<[E]%
+\\
+\>[B]{}\hsindent{11}{}\<[11]%
+\>[11]{}\mid \Conid{TFuncao}\;\Conid{Tipo}\;\Conid{Tipo}{}\<[E]%
+\\
+\>[B]{}\hsindent{5}{}\<[5]%
+\>[5]{}\mathbf{deriving}\;(\Conid{Show},\Conid{Eq}){}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\mathbf{data}\;\Conid{Expressao}\mathrel{=}\Conid{ValorI}\;\Conid{Int}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mid \Conid{ValorB}\;\Conid{Bool}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mid \Conid{Soma}\;\Conid{Expressao}\;\Conid{Expressao}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mid \Conid{Subtracao}\;\Conid{Expressao}\;\Conid{Expressao}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mid \Conid{Multiplicacao}\;\Conid{Expressao}\;\Conid{Expressao}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mid \Conid{Divisao}\;\Conid{Expressao}\;\Conid{Expressao}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mid \Conid{Let}\;\Conid{Id}\;\Conid{Expressao}\;\Conid{Expressao}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mid \Conid{Ref}\;\Conid{Id}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mid \Conid{Lambda}\;(\Conid{Id},\Conid{Tipo})\;\Conid{Tipo}\;\Conid{Expressao}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mid \Conid{Aplicacao}\;\Conid{Expressao}\;\Conid{Expressao}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mid \Conid{If}\;\Conid{Expressao}\;\Conid{Expressao}\;\Conid{Expressao}{}\<[E]%
+\\
+\>[B]{}\hsindent{5}{}\<[5]%
+\>[5]{}\mathbf{deriving}\;(\Conid{Show},\Conid{Eq}){}\<[E]%
+\ColumnHook
+\end{pboxed}
+\)\par\noindent\endgroup\resethooks
+
+A fun\c c\~{a}o que realiza a verifica\c c\~{a}o
+de tipos recebe uma express\~{a}o, um ambiente
+\texttt{Gamma} e possivelmente retorna um tipo
+v\'{a}lido (por isso o retorno \texttt{Maybe Tipo}).
+Caso o tipo verificado pelo interpretador seja um tipo
+\texttt{a} v\'{a}lido, \'{e} retornado um \texttt{Just a},
+caso algum erro ocorra no sistema de tipos,
+essa fun\c c\~{a}o deve retornar \texttt{Nothing}.
+Isso permite o uso de uma nota\c c\~{a}o
+baseada em monadas. 
+
+\begingroup\par\noindent\advance\leftskip\mathindent\(
+\begin{pboxed}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{verificarTipos}\mathbin{::}\Conid{Expressao}\to \Conid{Gamma}\to \Conid{Maybe}\;\Conid{Tipo}{}\<[E]%
+\ColumnHook
+\end{pboxed}
+\)\par\noindent\endgroup\resethooks
+
+Para alguns casos, a verifica\c c\~{a}o de tipos
+\'{e} bem trivial, particularmente a verifica\c c\~{a}o
+de tipos de express\~{o}es envolvendo valores inteiros,
+valores booleanos e express\~{o}es \texttt{lambda}.
+
+\begingroup\par\noindent\advance\leftskip\mathindent\(
+\begin{pboxed}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{verificarTipos}\;(\Conid{ValorI}\;\Varid{n})\;\anonymous \mathrel{=}\Varid{return}\;\Conid{TInt}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\Varid{verificarTipos}\;(\Conid{ValorB}\;\Varid{b})\;\anonymous \mathrel{=}\Varid{return}\;\Conid{TBool}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\Varid{verificarTipos}\;(\Conid{Lambda}\;(\Varid{v},\Varid{t1})\;\Varid{t2}\;\Varid{exp})\;\Varid{g}\mathrel{=}\Varid{return}\;(\Conid{TFuncao}\;\Varid{t1}\;\Varid{t2}){}\<[E]%
+\ColumnHook
+\end{pboxed}
+\)\par\noindent\endgroup\resethooks
+
+Os casos mostrados s\~{a}o a base dos tipos da linguagem, pois
+todas as constru\c c\~{o}es devem ser reduzidas a um dos casos triviais.
+
+Para outros casos, a verifica\c c\~{a}o de tipos
+requer um certo grau de indu\c c\~{a}o (seguindo as
+regras de deriva\c c\~{a}o vistas em sala de aula). Para
+a soma, temos a seguinte regra de deriva\c c\~{a}o: 
+
+\begin{prooftree}
+    \AxiomC{$\Gamma\vdash lhs : \texttt{TInt}$}
+    \AxiomC{$\Gamma\vdash rhs : \texttt{TInt}$}
+    \BinaryInfC{$\Gamma\vdash soma(lhs, rhs) : \texttt{TInt}$}
+\end{prooftree}
+
+que pode ser traduzida para Haskell como:
+
+\begingroup\par\noindent\advance\leftskip\mathindent\(
+\begin{pboxed}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{5}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{9}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{34}{@{}>{\hspre}c<{\hspost}@{}}%
+\column{34E}{@{}l@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{verificarTipos}\;(\Conid{Soma}\;\Varid{l}\;\Varid{r})\;\Varid{gamma}{}\<[34]%
+\>[34]{}\mathrel{=}{}\<[34E]%
+\\
+\>[B]{}\hsindent{5}{}\<[5]%
+\>[5]{}\Varid{verificarTipos}\;\Varid{l}\;\Varid{gamma}\bind \lambda \Varid{lt}\to {}\<[E]%
+\\
+\>[B]{}\hsindent{5}{}\<[5]%
+\>[5]{}\Varid{verificarTipos}\;\Varid{r}\;\Varid{gamma}\bind \lambda \Varid{rt}\to {}\<[E]%
+\\
+\>[B]{}\hsindent{5}{}\<[5]%
+\>[5]{}\mathbf{if}\;\Varid{lt}\equiv \Conid{TInt}\mathrel{\wedge}\Varid{rt}\equiv \Conid{TInt}{}\<[E]%
+\\
+\>[5]{}\hsindent{4}{}\<[9]%
+\>[9]{}\mathbf{then}\;\Varid{return}\;\Conid{TInt}{}\<[E]%
+\\
+\>[5]{}\hsindent{4}{}\<[9]%
+\>[9]{}\mathbf{else}\;\Conid{Nothing}{}\<[E]%
+\ColumnHook
+\end{pboxed}
+\)\par\noindent\endgroup\resethooks
+
+Analogamente, as opera\c c\~{o}es de subtra\c c\~{a}o, multiplica\c c\~{a}o
+e divis\~{a}o possuem \'{a}rvores de deriva\c c\~{a}o parecidas:
+
+\begin{itemize}
+
+    \item   Subtra\c c\~{a}o:
+        \begin{prooftree}
+            \AxiomC{$\Gamma\vdash lhs : \texttt{TInt}$}
+            \AxiomC{$\Gamma\vdash rhs : \texttt{TInt}$}
+            \BinaryInfC{$\Gamma\vdash subtracao(lhs, rhs) : \texttt{TInt}$}
+        \end{prooftree}
+
+    \item   Multiplica\c c\~{a}o:
+        \begin{prooftree}
+            \AxiomC{$\Gamma\vdash lhs : \texttt{TInt}$}
+            \AxiomC{$\Gamma\vdash rhs : \texttt{TInt}$}
+            \BinaryInfC{$\Gamma\vdash multiplicacao(lhs, rhs) : \texttt{TInt}$}
+        \end{prooftree}
+
+\end{itemize}
+
+Apenas uma mudan\c ca na verifica\c c\~{a}o de tipos da divis\~{a}o:
+caso seja identificado um denominador nulo (igual a zero) na divis\~{a}o,
+retorna-se \texttt{Nothing}, caso contr\'{a}rio, avalia-se o tipo das
+express\~{o}es alg\'{e}bricas normalmente.
+
+\begin{prooftree}
+    \AxiomC{$\Gamma\vdash lhs : \texttt{TInt}$}
+    \AxiomC{$\Gamma\vdash rhs : \texttt{TInt}$}
+    \AxiomC{$rhs \rightarrow \neg (ValorI 0)$}
+    \TrinaryInfC{$\Gamma\vdash divisao(lhs, rhs) : \texttt{TInt}$}
+\end{prooftree}
+
+Em Haskell:
+
+\begingroup\par\noindent\advance\leftskip\mathindent\(
+\begin{pboxed}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{5}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{9}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{14}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{17}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{21}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{verificarTipos}\;(\Conid{Divisao}\;\Varid{l}\;\Varid{r})\;\Varid{gamma}\mathrel{=}{}\<[E]%
+\\
+\>[B]{}\hsindent{5}{}\<[5]%
+\>[5]{}\mathbf{if}\;\Varid{r}\equiv (\Conid{ValorI}\;\mathrm{0}){}\<[E]%
+\\
+\>[5]{}\hsindent{4}{}\<[9]%
+\>[9]{}\mathbf{then}\;\Conid{Nothing}{}\<[E]%
+\\
+\>[5]{}\hsindent{4}{}\<[9]%
+\>[9]{}\mathbf{else}\;\Varid{verificarTipos}\;\Varid{l}\;\Varid{gamma}\bind \lambda \Varid{lt}\to {}\<[E]%
+\\
+\>[9]{}\hsindent{5}{}\<[14]%
+\>[14]{}\Varid{verificarTipos}\;\Varid{r}\;\Varid{gamma}\bind \lambda \Varid{rt}\to {}\<[E]%
+\\
+\>[14]{}\hsindent{3}{}\<[17]%
+\>[17]{}\mathbf{if}\;\Varid{lt}\equiv \Conid{TInt}\mathrel{\wedge}\Varid{rt}\equiv \Conid{TInt}{}\<[E]%
+\\
+\>[17]{}\hsindent{4}{}\<[21]%
+\>[21]{}\mathbf{then}\;\Varid{return}\;\Conid{TInt}{}\<[E]%
+\\
+\>[17]{}\hsindent{4}{}\<[21]%
+\>[21]{}\mathbf{else}\;\Conid{Nothing}{}\<[E]%
+\ColumnHook
+\end{pboxed}
+\)\par\noindent\endgroup\resethooks
+
+Similarmente, a verifica\c c\~{a}o de express\~{o}es do tipo
+\texttt{let} requer um grau de indu\c c\~{a}o. Supondo
+uma express\~{a}o \texttt{let v = e in c}, primeiro verificamos
+o tipo da express\~{a}o nomeada (\texttt{e}) \'{e} bem tipada com
+tipo \texttt{t},
+adicionamos uma associa\c c\~{a}o \texttt{(v, t)} no
+ambiente \texttt{Gamma} original e computamos o tipo de
+\texttt{c} no novo ambiente. Em termos de regras de deriva\c c\~{a}o,
+teremos:
+
+\begin{prooftree}
+\AxiomC{$\Gamma\vdash e : \tau_1$}
+\AxiomC{$(x,\tau_1)\Gamma\vdash c : \tau_2$}
+\BinaryInfC{$\Gamma\vdash let(v,e,c) : \tau_2$}
+\end{prooftree}
+
+Em Haskell:
+
+\begingroup\par\noindent\advance\leftskip\mathindent\(
+\begin{pboxed}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{5}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{9}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{13}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{29}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{verificarTipos}\;(\Conid{Let}\;\Varid{v}\;\Varid{e}\;\Varid{c})\;\Varid{gamma}\mathrel{=}{}\<[E]%
+\\
+\>[B]{}\hsindent{5}{}\<[5]%
+\>[5]{}\Varid{verificarTipos}\;\Varid{e}\;\Varid{gamma}{}\<[29]%
+\>[29]{}\bind \lambda \Varid{lt}\to {}\<[E]%
+\\
+\>[B]{}\hsindent{5}{}\<[5]%
+\>[5]{}\Varid{verificarTipos}\;\Varid{c}\;\Varid{gamma'}\bind \lambda \Varid{rt}\to {}\<[E]%
+\\
+\>[5]{}\hsindent{4}{}\<[9]%
+\>[9]{}\mathbf{if}\;\Varid{lt}\equiv \Varid{rt}{}\<[E]%
+\\
+\>[9]{}\hsindent{4}{}\<[13]%
+\>[13]{}\mathbf{then}\;\Varid{return}\;\Varid{rt}{}\<[E]%
+\\
+\>[9]{}\hsindent{4}{}\<[13]%
+\>[13]{}\mathbf{else}\;\Conid{Nothing}{}\<[E]%
+\\
+\>[B]{}\hsindent{5}{}\<[5]%
+\>[5]{}\mathbf{where}{}\<[E]%
+\\
+\>[5]{}\hsindent{4}{}\<[9]%
+\>[9]{}\Varid{gamma'}\mathrel{=}\Varid{incrementaAmb}\;\Varid{v}\;(\Varid{verificarTipos}\;\Varid{e}\;\Varid{gamma})\;\Varid{gamma}{}\<[E]%
+\ColumnHook
+\end{pboxed}
+\)\par\noindent\endgroup\resethooks
+
+A fun\c c\~{a}o \texttt{incrementaAmb} enriquece o ambiente na mudan\c ca
+de escopo das express\~{o}es \texttt{Let}.
+
+
+A verifica\c c\~{a}o do tipo de uma refer\^{e}ncia \'{e} bastante
+simples, requer apenas pesquisar o identificador no ambiente de
+mapeamento $\Gamma$, para isso, utilizamos a fun\c c\~{a}o pesquisar:
+
+\begingroup\par\noindent\advance\leftskip\mathindent\(
+\begin{pboxed}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{verificarTipos}\;(\Conid{Ref}\;\Varid{v})\;\Varid{gamma}\mathrel{=}\Varid{pesquisar}\;\Varid{v}\;\Varid{gamma}{}\<[E]%
+\ColumnHook
+\end{pboxed}
+\)\par\noindent\endgroup\resethooks
+
+Caso o identificador n\~{a}o seja encontrado no ambiente de
+mapeamento, \'{e} retornado um erro.
+
+Uma express\~{a}o \texttt{If Expressao Expressao Expressao} \'{e}
+formada por tr\^{e}s partes: a condi\c c\~{a}o de avalia\c c\~{a}o;
+uma cl\'{a}usula \texttt{then} e uma cl\'{a}usula \texttt{else}.
+A cl\'{a}usula \texttt{then} \'{e} executada se a express\~{a}o de
+condi\c c\~{a}o for avaliada verdadeira e, a cl\'{a}usula \texttt{else},
+caso contr\'{a}rio.
+A determina\c c\~{a}o do tipo de uma express\~{a}o \texttt{If} \'{e}
+um processo em duas etapas:
+
+\begin{enumerate}
+    \item Verificar se o tipo da express\~{a}o de condi\c c\~{a}o \'{e}
+    um booleano (\texttt{TBool});
+    \item Verificar se os tipos das express\~{o}es associadas \`{a}s
+    cl\'{a}usulas \texttt{then} e \texttt{else} s\~{a}o iguais.
+\end{enumerate}
+
+O interpretador ser\'{a} como apresentado:
+
+\begingroup\par\noindent\advance\leftskip\mathindent\(
+\begin{pboxed}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{5}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{9}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{14}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{17}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{verificarTipos}\;(\Conid{If}\;\Varid{test}\;\Varid{pass}\;\Varid{fail})\;\Varid{gamma}\mathrel{=}{}\<[E]%
+\\
+\>[B]{}\hsindent{5}{}\<[5]%
+\>[5]{}\Varid{verificarTipos}\;\Varid{test}\;\Varid{gamma}\bind \lambda \Varid{t}\to {}\<[E]%
+\\
+\>[B]{}\hsindent{5}{}\<[5]%
+\>[5]{}\mathbf{if}\;\Varid{t}\equiv \Conid{TBool}{}\<[E]%
+\\
+\>[5]{}\hsindent{4}{}\<[9]%
+\>[9]{}\mathbf{then}\;\Varid{verificarTipos}\;\Varid{pass}\;\Varid{gamma}\bind \lambda \Varid{p}\to {}\<[E]%
+\\
+\>[9]{}\hsindent{5}{}\<[14]%
+\>[14]{}\Varid{verificarTipos}\;\Varid{fail}\;\Varid{gamma}\bind \lambda \Varid{f}\to {}\<[E]%
+\\
+\>[9]{}\hsindent{5}{}\<[14]%
+\>[14]{}\mathbf{if}\;\Varid{p}\equiv \Varid{f}{}\<[E]%
+\\
+\>[14]{}\hsindent{3}{}\<[17]%
+\>[17]{}\mathbf{then}\;\Varid{return}\;\Varid{p}{}\<[E]%
+\\
+\>[14]{}\hsindent{3}{}\<[17]%
+\>[17]{}\mathbf{else}\;\Conid{Nothing}{}\<[E]%
+\\
+\>[5]{}\hsindent{4}{}\<[9]%
+\>[9]{}\mathbf{else}\;\Conid{Nothing}{}\<[E]%
+\ColumnHook
+\end{pboxed}
+\)\par\noindent\endgroup\resethooks
+
+Conclui-se ent\~{a}o que, a regra para definir uma express\~{a}o
+\texttt{If} \'{e}:
+
+\begin{prooftree}
+    \AxiomC{$\Gamma\vdash cond : \texttt{boolean}$}
+    \AxiomC{$\Gamma\vdash then : \tau$}
+    \AxiomC{$\Gamma\vdash else : \tau$}
+    \TrinaryInfC{$\Gamma\vdash \{\texttt{if}$ $cond$ $then$ $else\} : \tau$}
+\end{prooftree}
+
+A necessidade das cl\'{a}usulas \texttt{then} e \texttt{else} possuirem
+o mesmo tipo (no caso da linguagem pode ser inteiro ou booleano) permite
+que possamos atribuir um tipo espec\'{i}fico para express\~{o}es \texttt{If}
+e que n\~{a}o dependem de uma avalia\c c\~{a}o em tempo de execu\c c\~{a}o.
+
+
+Para definir o tipo de uma aplica\c c\~{a}o de fun\c c\~{a}o, ser\~{a}o
+necess\'{a}rias mais verifica\c c\~{o}es. Uma aplica\c c\~{a}o \'{e}
+definida como \texttt{Aplicacao Expressao Expressao}, na qual a primeira
+express\~{a}o \'{e} a defini\c c\~{a}o da fun\c c\~{a}o e a segunda
+representa o argumento. O processo de verifica\c c\~{a} para uma
+\texttt{Aplicacao def arg} \'{e} o seguinte:
+
+\begin{enumerate}
+
+    \item Verificar se a express\~{a}o que define a fun\c c\~{a}o
+    (\texttt{def}) \'{e} uma express\~{a}o \textit{lambda}; caso seja,
+    ela automaticamente possui o tipo \texttt{TFuncao tId tExp};
+    \item Verificar o tipo do argumento passado para a aplica\c c\~{a}o
+    (\texttt{arg}) no contexto $\Gamma$ (denominado \texttt{tArg});
+    \item Comparar \texttt{tArg} com \texttt{tId}:
+    \begin{itemize}
+        \item Se forem iguais, ent\~{a}o o par\^{a}metro passado na
+        aplica\c c\~{a}o pode ser associado ao identificador da
+        express\~{a}o \textit{lambda};
+        \item Se forem diferentes, ent\~{a}o o tipo do par\^{a}metro
+        difere do tipo do argumento e pode ser retornado \texttt{Nothing};
+    \end{itemize}
+    \item O tipo da aplica\c c\~{a}o ser\'{a} o tipo da express\~{a}o
+    associada na express\~{a}o \textit{lambda} verificado no ambiente
+    $\Gamma$' composto pela tupla \texttt{(id, tipo\_do\_id)};
+
+\end{enumerate}
+
+Em Haskell:
+
+\begingroup\par\noindent\advance\leftskip\mathindent\(
+\begin{pboxed}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{5}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{9}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{13}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{17}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{21}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{verificarTipos}\;(\Conid{Aplicacao}\;\Varid{def}\;\Varid{arg})\;\Varid{gamma}\mathrel{=}{}\<[E]%
+\\
+\>[B]{}\hsindent{5}{}\<[5]%
+\>[5]{}\mathbf{case}\;\Varid{def}\;\mathbf{of}{}\<[E]%
+\\
+\>[5]{}\hsindent{4}{}\<[9]%
+\>[9]{}(\Conid{Lambda}\;(\Varid{v},\Varid{tId})\;\Varid{tExp}\;\Varid{exp})\to {}\<[E]%
+\\
+\>[9]{}\hsindent{4}{}\<[13]%
+\>[13]{}\Varid{verificarTipos}\;\Varid{arg}\;\Varid{gamma}\bind \lambda \Varid{a}\to {}\<[E]%
+\\
+\>[13]{}\hsindent{4}{}\<[17]%
+\>[17]{}\mathbf{if}\;\Varid{a}\equiv \Varid{tId}{}\<[E]%
+\\
+\>[17]{}\hsindent{4}{}\<[21]%
+\>[21]{}\mathbf{then}\;\Varid{verificarTipos}\;\Varid{exp}\;\Varid{gamma'}{}\<[E]%
+\\
+\>[17]{}\hsindent{4}{}\<[21]%
+\>[21]{}\mathbf{else}\;\Conid{Nothing}{}\<[E]%
+\\
+\>[13]{}\hsindent{4}{}\<[17]%
+\>[17]{}\mathbf{where}{}\<[E]%
+\\
+\>[17]{}\hsindent{4}{}\<[21]%
+\>[21]{}\Varid{gamma'}\mathrel{=}[\mskip1.5mu (\Varid{v},\Varid{tId})\mskip1.5mu]{}\<[E]%
+\\
+\>[5]{}\hsindent{4}{}\<[9]%
+\>[9]{}\Varid{otherwise}\to \Varid{error}\;(\text{\tt \char34 Aplicacao~de~funcao~nao~anonima\char34}){}\<[E]%
+\ColumnHook
+\end{pboxed}
+\)\par\noindent\endgroup\resethooks
+
+Conclui-se ent\~{a}o que a regra que define uma aplica\c c\~{a}o de
+fun\c c\~{a}o pode ser representada pela \'{a}rvore a seguir:
+
+\begin{prooftree}
+    \AxiomC{$\Gamma\vdash def : (\texttt{TFuncao}$ $\tau_{1}$ $\tau_{2})$}
+    \AxiomC{$\Gamma\vdash arg : \tau_{1}$}
+    \BinaryInfC{$\Gamma\vdash \{$\texttt{Aplicacao }$def$ $arg\} : \tau_{2}$}
+\end{prooftree}
+
+\begingroup\par\noindent\advance\leftskip\mathindent\(
+\begin{pboxed}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{5}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{26}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{incrementaAmb}\mathbin{::}\Conid{Id}\to \Conid{Maybe}\;\Conid{Tipo}\to \Conid{Gamma}\to \Conid{Gamma}{}\<[E]%
+\\
+\>[B]{}\Varid{incrementaAmb}\;\Varid{n}\;\Conid{Nothing}\;{}\<[26]%
+\>[26]{}[\mskip1.5mu \mskip1.5mu]\mathrel{=}[\mskip1.5mu \mskip1.5mu]{}\<[E]%
+\\
+\>[B]{}\Varid{incrementaAmb}\;\Varid{n}\;\Conid{Nothing}\;{}\<[26]%
+\>[26]{}((\Varid{i},\Varid{e})\mathbin{:}\Varid{xs})\mathrel{=}((\Varid{i},\Varid{e})\mathbin{:}\Varid{xs}){}\<[E]%
+\\
+\>[B]{}\Varid{incrementaAmb}\;\Varid{n}\;(\Conid{Just}\;\Varid{v})\;[\mskip1.5mu \mskip1.5mu]\mathrel{=}[\mskip1.5mu (\Varid{n},\Varid{v})\mskip1.5mu]{}\<[E]%
+\\
+\>[B]{}\Varid{incrementaAmb}\;\Varid{n}\;(\Conid{Just}\;\Varid{v})\;((\Varid{i},\Varid{e})\mathbin{:}\Varid{xs}){}\<[E]%
+\\
+\>[B]{}\hsindent{5}{}\<[5]%
+\>[5]{}\mid \Varid{n}\equiv \Varid{i}\mathrel{=}\Varid{incrementaAmb}\;\Varid{n}\;(\Varid{return}\;\Varid{v})\;[\mskip1.5mu \mskip1.5mu]{}\<[E]%
+\\
+\>[B]{}\hsindent{5}{}\<[5]%
+\>[5]{}\mid \Varid{otherwise}\mathrel{=}\Varid{incrementaAmb}\;\Varid{n}\;(\Varid{return}\;\Varid{v})\;\Varid{xs}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\Varid{pesquisar}\mathbin{::}\Conid{Id}\to \Conid{Gamma}\to \Conid{Maybe}\;\Conid{Tipo}{}\<[E]%
+\\
+\>[B]{}\Varid{pesquisar}\;\Varid{v}\;[\mskip1.5mu \mskip1.5mu]\mathrel{=}\Varid{error}\;\text{\tt \char34 Variavel~nao~declarada.\char34}{}\<[E]%
+\\
+\>[B]{}\Varid{pesquisar}\;\Varid{v}\;((\Varid{i},\Varid{e})\mathbin{:}\Varid{xs}){}\<[E]%
+\\
+\>[B]{}\hsindent{5}{}\<[5]%
+\>[5]{}\mid \Varid{v}\equiv \Varid{i}\mathrel{=}\Varid{return}\;\Varid{e}{}\<[E]%
+\\
+\>[B]{}\hsindent{5}{}\<[5]%
+\>[5]{}\mid \Varid{otherwise}\mathrel{=}\Varid{pesquisar}\;\Varid{v}\;\Varid{xs}{}\<[E]%
+\ColumnHook
+\end{pboxed}
+\)\par\noindent\endgroup\resethooks
+
+\printbibliography
+
+
+\end{document}
