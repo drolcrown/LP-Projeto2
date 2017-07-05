@@ -59,14 +59,26 @@ verificarTipos (Let v e c)              gamma =
 
 --verificarTipos (Aplicacao def arg)      gamma = undefined
 verificarTipos (Aplicacao def arg)      gamma =
+--    let gamma' = [(v, tId)]
+    case def of
+        (Lambda (v, tId) tExp exp) -> verificarTipos arg gamma >>= \a ->
+            if a == tId
+                then verificarTipos exp gamma'
+                else Nothing
+            where
+                gamma' = [(v, tId)]
+        otherwise -> error ("Aplicacao de funcao nao anonima")
+
+{-
+verificarTipos (Aplicacao def arg)      gamma =
     verificarTipos def gamma >>= \d ->
     case d of
         (TFuncao tId tExp) -> verificarTipos arg gamma >>= \a ->
-            if a == tExp
-                then return a
+            if a == tId
+                then verificarTipos tExp -- completar
                 else Nothing
         otherwise -> error ("Aplicacao de funcao nao anonima")
-
+-}
 --verificarTipos (If test pass fail)      gamma = undefined
 verificarTipos (If test pass fail)      gamma =
     verificarTipos test gamma >>= \t ->

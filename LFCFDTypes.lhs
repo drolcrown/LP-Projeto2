@@ -1,13 +1,23 @@
 \documentclass[12pt]{article}
 
-%include polycode.fmt
 
-\usepackage{busproofs}
+\usepackage[utf8]{inputenc}
 \usepackage[brazil]{babel}
+\usepackage{color}
+\usepackage{fontenc}
+\usepackage{biblatex}
+\usepackage{csquotes}
+\usepackage{verbatim}
+\usepackage{listings}
+\usepackage{busproofs}
+\usepackage[nottoc]{tocbibind}
 
 \title{Implementa\c c\~{a}o de Verifica\c c\~{a}o de Tipos em Haskell}
 
-\author{Rodrigo Bonif\'{a}cio}
+\author{Luisa Sinzker Fantin, 14/0151893\\
+        Jo\~{a}o Pedro Silva Sousa, 15/0038381\\
+        Rafael Oliveira de Souza, 15/0081537\\
+}
 
 \begin{document}
 
@@ -18,13 +28,23 @@
 Esse documento apresenta uma implementa\c c\~{a}o,
 em \emph{literate Haskell}, do mecanismo de verifica\c c\~{a}o
 de tipos de uma linguagem de programa\c c\~{a}o funcional
-minimalista. Os alunos da disciplina Linguagens de Programa\c c\~{a}o
-devem extender essa implementa\c c\~{a}o de tal forma que
-todos os elementos sint\'{a}ticos possuam a verifica\c c\~{a}o
-de tipos implementada.
+minimalista.
+
+O objetivo da implementa\c c\~{a}o de tipos consiste em identificar
+erros a n\'{i}vel sint\'{a}tico (n\~{a}o erros de sintaxe) na linguagem,
+utilizando o interpretador. Algumas computa\c c\~{o}es inv\'{a}lidas podem
+ser identificadas antes mesmo de execut\'{a}-las, como por exemplo uma
+divis\~{a}o por zero.
+
+Caso tent\'{a}ssemos avaliar uma divis\~{a}o por zero no interpretador,
+seria obtida a sa\'{i}a \emph{infinity}, resultado de uma computa\c c\~{a}o
+realizada pelo interpretador da linguagem Haskell, n\~{a}o do interpretador
+constru\'{i}do. Ou seja, se esper\'{a}ssemos um erro e o GHCi n\~{a}o o
+identificasse, ou o GHCi marcasse um erro que n\~{a}o estamos esperando,
+o interpretador n\~{a}o seria confi\'{a}vel \cite{shriram}.
+
 
 \section{Vis\~{a}o geral da linguagem}
-
 
 A linguagem LFCF suporta tanto express\~{o}es
 identificadas (LET) quanto identificadores e fun\c c\~{o}es de alta ordem
@@ -32,6 +52,7 @@ identificadas (LET) quanto identificadores e fun\c c\~{o}es de alta ordem
 verifica\c c\~{a}o de tipos, ent\~{a}o n\~{a}o est\~{a}o
 implementadas fun\c c\~{o}es voltadas para a avalia\c c\~{a}o
 das express\~{o}es. 
+
 
 \section{Defini\c c\~{a}o da \'{A}rvore Sint\'{a}tica Abstrata}
 
@@ -65,8 +86,10 @@ de fun\c c\~{o}es e \texttt{if-then-else}
 
 \begin{code}
 
-data Tipo = TInt | TBool | TFuncao Tipo Tipo 
- deriving(Show, Eq)
+data Tipo = TInt
+          | TBool
+          | TFuncao Tipo Tipo 
+    deriving(Show, Eq)
 
 data Expressao = ValorI Int
                | ValorB Bool
@@ -79,7 +102,7 @@ data Expressao = ValorI Int
                | Lambda (Id, Tipo) Tipo Expressao
                | Aplicacao Expressao Expressao
                | If Expressao Expressao Expressao
- deriving(Show, Eq)
+    deriving(Show, Eq)
 
 \end{code}
 
@@ -87,21 +110,25 @@ A fun\c c\~{a}o que realiza a verifica\c c\~{a}o
 de tipos recebe uma express\~{a}o, um ambiente
 \texttt{Gamma} e possivelmente retorna um tipo
 v\'{a}lido (por isso o retorno \texttt{Maybe Tipo}).
-Caso algum erro ocorra no sistema de tipos,
+Caso o tipo verificado pelo interpretador seja um tipo
+\texttt{a} v\'{a}lido, \'{e} retornado um \texttt{Just a},
+caso algum erro ocorra no sistema de tipos,
 essa fun\c c\~{a}o deve retornar \texttt{Nothing}.
 Isso permite o uso de uma nota\c c\~{a}o
 baseada em monadas. 
 
 \begin{code} 
+
 verificarTipos :: Expressao -> Gamma -> Maybe Tipo
+=
 \end{code}
 
 Para alguns casos, a verifica\c c\~{a}o de tipos
 \'{e} bem trivial, particularmente a verifica\c c\~{a}o
 de tipos de express\~{o}es envolvendo valores inteiros,
-valores booleanos e express\~{o}es \texttt{lambda} 
+valores booleanos e express\~{o}es \texttt{lambda}.
 
-\begin{code} 
+\begin{code}
 verificarTipos (ValorI n) _   = return TInt
 
 verificarTipos (ValorB b) _   = return TBool
@@ -109,24 +136,60 @@ verificarTipos (ValorB b) _   = return TBool
 verificarTipos (Lambda (v, t1) t2 exp) g = return (TFuncao t1 t2)
 \end{code}
 
+Os casos mostrados s\~{a}o a base dos tipos da linguagem, pois
+todas as constru\c c\~{o}es devem ser reduzidas a um dos casos triviais.
+
 Para outros casos, a verifica\c c\~{a}o de tipos
 requer um certo grau de indu\c c\~{a}o (seguindo as
 regras de deriva\c c\~{a}o vistas em sala de aula). Para
 a soma, temos a seguinte regra de deriva\c c\~{a}o: 
 
 \begin{prooftree}
-\AxiomC{$\Gamma\vdash lhs : TInt$}
-\AxiomC{$\Gamma\vdash rhs : TInt$}
-\BinaryInfC{$\Gamma\vdash soma(lhs, rhs) : TInt$}
+    \AxiomC{$\Gamma\vdash lhs : TInt$}
+    \AxiomC{$\Gamma\vdash rhs : TInt$}
+    \BinaryInfC{$\Gamma\vdash soma(lhs, rhs) : TInt$}
 \end{prooftree}
 
 \noindent que pode ser traduzida para Haskell como:
 
 \begin{code} 
 verificarTipos (Soma l r) gamma  =
-  verificarTipos l gamma >>= \lt ->
-  verificarTipos r gamma >>= \rt ->
-  if lt == TInt && rt == TInt then return TInt else Nothing
+    verificarTipos l gamma >>= \lt ->
+    verificarTipos r gamma >>= \rt ->
+    if lt == TInt && rt == TInt
+        then return TInt
+        else Nothing
+\end{code}
+
+Analogamente, as opera\c c\~{o}es de subtra\c c\~{a}o, multiplica\c c\~{a}o
+e divis\~{a}o possuem \'{a}rvores de deriva\c c\~{a}o parecidas:
+
+\begin{prooftree}
+    \AxiomC{$\Gamma\vdash lhs : TInt$}
+    \AxiomC{$\Gamma\vdash rhs : TInt$}
+    \BinaryInfC{$\Gamma\vdash subtracao(lhs, rhs) : TInt$}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{$\Gamma\vdash lhs : TInt$}
+    \AxiomC{$\Gamma\vdash rhs : TInt$}
+    \BinaryInfC{$\Gamma\vdash multiplicacao(lhs, rhs) : TInt$}
+\end{prooftree}
+
+Apenas uma mudan\c ca na verifica\c c\~{a}o de tipos da divis\~{a}o:
+caso seja identificado um denominador nulo (igual a zero) na divis\~{a}o,
+retorna-se \textt{Nothing}, caso contr\'{a}rio, avalia-se o tipo das
+express\~{o}es alg\'{e}bricas normalmente.
+
+\begin{code}
+verificarTipos (Divisao l r) gamma =
+    if r == (ValorI 0)
+        then Nothing
+        else verificarTipos l gamma >>= \lt ->
+             verificarTipos r gamma >>= \rt ->
+                if lt == TInt && rt == TInt
+                    then return TInt
+                    else Nothing
 \end{code}
 
 Similarmente, a verifica\c c\~{a}o de express\~{o}es do tipo
