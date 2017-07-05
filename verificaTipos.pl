@@ -3,8 +3,6 @@
 verificarTipos(_, valor_inteiro(X),tInt) :- integer(X).
 verificarTipos(_, valor_booleano(true), tBool) :- !.
 verificarTipos(_, valor_booleano(false), tBool) :- !.
-%%TODO
-%verificarTipos(Gamma, var(_), Res) :-
 
 verificarTipos(_, valor_booleano(_), tErro).
 
