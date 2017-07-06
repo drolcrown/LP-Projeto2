@@ -100,8 +100,7 @@ pesquisar v ((i,e):xs)
 -- Incrementa o ambiente.
 incrementaAmb :: Id -> Maybe Tipo -> Gamma -> Gamma
 incrementaAmb n Nothing  [] = []
-incrementaAmb n Nothing  ((i,e):xs) = ((i,e):xs)
 incrementaAmb n (Just v) [] = [(n, v)]
 incrementaAmb n (Just v) ((i,e):xs)
-    | n == i = incrementaAmb n (return v) []
+    | n == i = []
     | otherwise = incrementaAmb n (return v) xs
