@@ -8,3 +8,12 @@ pdf: lhs2tex
 
 clean:
 	rm LFCFDTypes.log LFCFDTypes.pdf LFCFDTypes.aux LFCFDTypes.tex LFCFDTypes.ptb LFCFDTypes.bcf LFCFDTypes.bbl LFCFDTypes.blg LFCFDTypes.run.xml
+
+runlhs:
+	ghci LFCFDTypes.lhs
+
+interpreter:
+	ghci LFCFDTypes.hs
+
+tests:
+	ghci LFCFDTests.hs

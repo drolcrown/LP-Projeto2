@@ -1,4 +1,4 @@
-module VerificaTipos where 
+module LFCFDTypes where 
 
 
 -- Os tipos validos sao definidos com o tipo algebrico,
