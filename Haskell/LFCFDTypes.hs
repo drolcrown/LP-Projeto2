@@ -53,7 +53,7 @@ verificarTipos (Let v e c)              gamma =
     verificarTipos c gamma' >>= \rt ->
     if lt == rt
         then return rt
-        else Nothing
+        else return rt
     where
         gamma' = incrementaAmb v (verificarTipos e gamma) gamma
 
