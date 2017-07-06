@@ -48,12 +48,9 @@ verificarTipos (Divisao l r)            gamma = -- retorna Nothing se o denomina
 
 verificarTipos (Ref v)                  gamma = pesquisar v gamma
 
-verificarTipos (Let v e c)              gamma =
+verificarTipos (Let v e c)              gamma = 
     verificarTipos e gamma  >>= \lt ->
-    verificarTipos c gamma' >>= \rt ->
-    if lt == rt
-        then return rt
-        else return rt
+    verificarTipos c gamma' >>= \rt -> return rt
     where
         gamma' = incrementaAmb v (verificarTipos e gamma) gamma
 

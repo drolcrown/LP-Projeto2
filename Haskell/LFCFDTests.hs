@@ -45,6 +45,11 @@ let4 = Let "x" (ValorB True) (Soma (ValorI 2) (ValorI 3))
 
 let5 = Let "x" (ValorB True) (Soma (Ref "x") (ValorI 3))
 
+let6 = Let "x" (ValorB True) ((ValorI 3))
+
+let7 = Let "x" (Soma (ValorB True) (ValorI 3)) ((ValorI 3))
+
+
 ap1 = Aplicacao (Lambda ("x", TInt) (TBool) (ValorB True)) (v5)
 
 ap2 = Aplicacao (Lambda ("x", TInt) (TInt) (ValorB True)) (ValorB True)
@@ -125,6 +130,8 @@ teste29 = TestCase (assertEqual "Soma x + 4 --- x = TBool" (Nothing) (verificarT
 
 teste30 = TestCase (assertEqual "Soma x + 4 --- x = TInt" (Just TInt) (verificarTipos (ap10) []))
 
+teste32 = TestCase (assertEqual "Let x = True in 2" (Just TInt) (verificarTipos (let6) []))
+
 todosOsTestes = TestList [ teste1
                          , teste2
                          , teste3
@@ -155,6 +162,7 @@ todosOsTestes = TestList [ teste1
                          , teste28
                          , teste29
                          , teste30
+                         , teste32
                          ]
 
 executarTestes = runTestTT todosOsTestes
